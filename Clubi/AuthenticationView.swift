@@ -23,19 +23,19 @@ struct AuthenticationView: View {
                     Spacer()
                     
                     // App Logo & Title
-                    VStack(spacing: 16) {
+                    VStack(spacing: ClubiSpacing.lg) {
                         Image(systemName: "flag.fill")
                             .font(.system(size: 48))
-                            .foregroundColor(.green)
+                            .foregroundColor(.augustaPine)
                         
                         Text("Clubi")
-                            .font(.system(size: 36, weight: .bold, design: .rounded))
-                            .foregroundColor(.primary)
+                            .font(ClubiTypography.display(36, weight: .bold))
+                            .foregroundColor(.charcoal)
                     }
                     
                     Text("Rate and discover golf courses")
-                        .font(.title3)
-                        .foregroundColor(.secondary)
+                        .font(ClubiTypography.headline(18))
+                        .foregroundColor(.grayFairway)
                         .multilineTextAlignment(.center)
                     
                     Spacer()
@@ -147,29 +147,21 @@ struct AuthenticationView: View {
                         HStack {
                             if isLoading {
                                 ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .pristineWhite))
                                     .scaleEffect(0.8)
                             }
                             Text(isSignUp ? "Create Account" : "Sign In")
-                                .font(.headline)
-                                .fontWeight(.semibold)
+                                .font(ClubiTypography.body(weight: .semibold))
                         }
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(canSubmit ? Color.green : Color(.systemGray4))
-                        )
-                        .contentShape(Rectangle())
                     }
                     .disabled(!canSubmit || isLoading)
+                    .clubiPrimaryButton(isDisabled: !canSubmit || isLoading)
                     
                     // Error Message
                     if !errorMessage.isEmpty {
                         Text(errorMessage)
-                            .font(.subheadline)
-                            .foregroundColor(.red)
+                            .font(ClubiTypography.body(14))
+                            .foregroundColor(.errorRed)
                             .multilineTextAlignment(.center)
                             .lineLimit(nil)
                             .fixedSize(horizontal: false, vertical: true)
@@ -180,6 +172,7 @@ struct AuthenticationView: View {
                 .padding(.horizontal, 32)
                 .padding(.bottom, 50)
             }
+            .background(Color.morningMist)
             .navigationBarHidden(true)
         }
     }

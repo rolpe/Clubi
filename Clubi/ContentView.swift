@@ -81,15 +81,15 @@ struct ContentView: View {
         NavigationView {
             VStack(spacing: 0) {
                 // Header Section
-                VStack(spacing: 16) {
+                VStack(spacing: ClubiSpacing.lg) {
                     // App Title and Sort Menu
                     HStack {
                         Image(systemName: "flag.fill")
                             .font(.title2)
-                            .foregroundColor(.green)
+                            .foregroundColor(.augustaPine)
                         Text("Clubi")
-                            .font(.title)
-                            .fontWeight(.bold)
+                            .font(ClubiTypography.display(24, weight: .bold))
+                            .foregroundColor(.charcoal)
                             .onLongPressGesture {
                                 addTestData()
                             }
@@ -106,8 +106,8 @@ struct ContentView: View {
                             Menu {
                                 if let userEmail = authManager.user?.email {
                                     Text(userEmail)
-                                        .font(.subheadline)
-                                        .foregroundColor(.secondary)
+                                        .font(ClubiTypography.body(14))
+                                        .foregroundColor(.grayFairway)
                                 }
                                 
                                 Divider()
@@ -124,10 +124,10 @@ struct ContentView: View {
                                 VStack(alignment: .center, spacing: 2) {
                                     Image(systemName: "person.circle")
                                         .font(.title3)
-                                        .foregroundColor(.primary)
+                                        .foregroundColor(.augustaPine)
                                     Text("Account")
-                                        .font(.caption2)
-                                        .foregroundColor(.secondary)
+                                        .font(ClubiTypography.caption())
+                                        .foregroundColor(.grayFairway)
                                 }
                             }
                             
@@ -150,10 +150,10 @@ struct ContentView: View {
                                 VStack(alignment: .center, spacing: 2) {
                                     Image(systemName: "arrow.up.arrow.down")
                                         .font(.title3)
-                                        .foregroundColor(.primary)
+                                        .foregroundColor(.augustaPine)
                                     Text("Sort")
-                                        .font(.caption2)
-                                        .foregroundColor(.secondary)
+                                        .font(ClubiTypography.caption())
+                                        .foregroundColor(.grayFairway)
                                 }
                             }
                         }
@@ -162,7 +162,7 @@ struct ContentView: View {
                     // Search Bar
                     HStack {
                         Image(systemName: "magnifyingglass")
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.grayFairway)
                         TextField("Search golf courses...", text: $searchText)
                             .textFieldStyle(.plain)
                             .focused($isSearchFieldFocused)
@@ -183,35 +183,40 @@ struct ContentView: View {
                                 clearSearch()
                             }) {
                                 Image(systemName: "xmark.circle.fill")
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(.grayFairway)
                                     .font(.system(size: 16))
                             }
                         }
                     }
-                    .padding(12)
-                    .background(Color(.systemGray6))
-                    .cornerRadius(10)
+                    .padding(ClubiSpacing.md)
+                    .background(Color.pristineWhite)
+                    .cornerRadius(ClubiRadius.md)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: ClubiRadius.md)
+                            .stroke(Color.subtleLines, lineWidth: 1)
+                    )
+                    .cardShadow()
                 }
-                .padding(.horizontal)
-                .padding(.top)
+                .padding(.horizontal, ClubiSpacing.lg)
+                .padding(.top, ClubiSpacing.lg)
                 
                 // Content Section
                 if courses.isEmpty && searchText.isEmpty {
                     // Empty state - no courses yet AND no search
-                    VStack(spacing: 20) {
+                    VStack(spacing: ClubiSpacing.lg) {
                         Spacer()
                         
                         Image(systemName: "mappin.and.ellipse")
                             .font(.system(size: 50))
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.augustaPine)
                         
                         Text("No courses yet")
-                            .font(.title2)
-                            .fontWeight(.semibold)
+                            .font(ClubiTypography.headline())
+                            .foregroundColor(.charcoal)
                         
                         Text("Search for golf courses above to get started")
-                            .font(.body)
-                            .foregroundColor(.secondary)
+                            .font(ClubiTypography.body())
+                            .foregroundColor(.grayFairway)
                             .multilineTextAlignment(.center)
                         
                         Spacer()
@@ -224,10 +229,18 @@ struct ContentView: View {
             List {
                             // Your Courses Section  
                             if !filteredCourses.isEmpty {
-                                Section("Your Courses") {
+                                Section {
                                     ForEach(filteredCourses, id: \.id) { course in
                                         CourseRowView(course: course)
                                             .id(course.id)
+                                            .listRowBackground(Color.clear)
+                                            .listRowSeparator(.hidden)
+                                            .listRowInsets(EdgeInsets(
+                                                top: ClubiSpacing.sm,
+                                                leading: ClubiSpacing.lg,
+                                                bottom: ClubiSpacing.sm,
+                                                trailing: ClubiSpacing.lg
+                                            ))
                                             .contentShape(Rectangle())
                                             .onTapGesture {
                                                 if course.reviews.isEmpty {
@@ -243,40 +256,46 @@ struct ContentView: View {
                                                     courseToDelete = course
                                                     showingDeleteAlert = true
                                                 }
-                                                .tint(.red)
+                                                .tint(.errorRed)
                                             }
                                     }
+                                } header: {
+                                    Text("Your Courses")
+                                        .font(ClubiTypography.headline(16))
+                                        .foregroundColor(.augustaPine)
+                                        .textCase(.none)
                                 }
                                 .id("your-courses-section")
                             }
                             
                             // Find Courses Section (Google Places)
                             if !searchText.isEmpty {
-                                Section("Find Courses") {
+                                Section {
                                     if isSearchingGoogle {
-                                        HStack {
+                                        HStack(spacing: ClubiSpacing.md) {
                                             ProgressView()
+                                                .progressViewStyle(CircularProgressViewStyle(tint: .augustaPine))
                                                 .scaleEffect(0.8)
-                                            Text("Searching...")
-                                                .font(.subheadline)
-                                                .foregroundColor(.secondary)
+                                            Text("Searching golf courses...")
+                                                .font(ClubiTypography.body())
+                                                .foregroundColor(.grayFairway)
                                         }
-                                        .padding(.vertical, 8)
+                                        .padding(.vertical, ClubiSpacing.lg)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
                                     } else if googleResults.isEmpty && searchText.count >= 2 {
-                                        VStack(spacing: 12) {
+                                        VStack(spacing: ClubiSpacing.md) {
                                             Text("No matches found")
-                                                .font(.subheadline)
-                                                .foregroundColor(.secondary)
+                                                .font(ClubiTypography.body())
+                                                .foregroundColor(.grayFairway)
                                             
                                             if filteredCourses.isEmpty {
                                                 Button("Add \"\(searchText)\" manually") {
                                                     showingAddCourse = true
                                                 }
-                                                .font(.subheadline)
-                                                .buttonStyle(.borderedProminent)
+                                                .clubiSecondaryButton()
                                             }
                                         }
-                                        .padding(.vertical, 8)
+                                        .padding(.vertical, ClubiSpacing.lg)
                                     } else {
                                         ForEach(googleResults, id: \.placeId) { result in
                                             GoogleCourseRowView(result: result) {
@@ -325,6 +344,9 @@ struct ContentView: View {
                     }
                 }
             }
+            .listStyle(PlainListStyle())
+            .scrollContentBackground(.hidden)
+            .background(Color.morningMist)
             .navigationBarHidden(true)
             .sheet(isPresented: $showingAddCourse) {
                 AddCourseView(searchText: searchText) { newCourse in
@@ -661,50 +683,97 @@ struct CourseRowView: View {
     let course: Course
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: ClubiSpacing.md) {
+            // Main course info row
+            HStack(alignment: .center, spacing: ClubiSpacing.md) {
+                VStack(alignment: .leading, spacing: ClubiSpacing.xs) {
                     Text(course.name)
-                        .font(.headline)
-                        .foregroundColor(.primary)
+                        .font(ClubiTypography.headline(18))
+                        .foregroundColor(.charcoal)
+                        .lineLimit(2)
                     
-                    Text(course.location)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+                    HStack(spacing: ClubiSpacing.xs) {
+                        Image(systemName: "location.fill")
+                            .font(.caption)
+                            .foregroundColor(.grayFairway)
+                        
+                        Text(course.location)
+                            .font(ClubiTypography.body(14))
+                            .foregroundColor(.grayFairway)
+                            .lineLimit(1)
+                    }
                 }
                 
                 Spacer()
                 
-                // Show score if course has been reviewed
+                // Score display or status
                 if let score = course.latestScore {
-                    VStack(spacing: 2) {
-                        Text("\(score, specifier: "%.1f")")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(.primary)
-                        Text("/ 10")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
+                    ClubiScoreDisplay(score: score, size: .medium)
                 } else {
-                    Text("Not Reviewed")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color(.systemGray5))
-                        .cornerRadius(4)
+                    ClubiTag("Not Reviewed", color: .lightGray, backgroundColor: Color.morningMist)
                 }
             }
             
-            // Show review date if available
-            if let latestReview = course.reviews.sorted(by: { $0.dateReviewed > $1.dateReviewed }).first {
-                Text("Reviewed \(latestReview.dateReviewed, format: .dateTime.month().day().year())")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
+            // Progress bar for reviewed courses
+            if let score = course.latestScore {
+                ClubiProgressBar(progress: score, total: 10.0)
+                    .frame(height: 4)
+            }
+            
+            // Bottom row with tags and date
+            HStack {
+                // Tags based on score or status
+                if let score = course.latestScore {
+                    HStack(spacing: ClubiSpacing.xs) {
+                        if score >= 9.0 {
+                            ClubiTag("Exceptional", color: .goldenTournament)
+                        } else if score >= 8.0 {
+                            ClubiTag("Excellent", color: .freshGrass)
+                        } else if score >= 7.0 {
+                            ClubiTag("Very Good", color: .augustaPine)
+                        } else if score >= 6.0 {
+                            ClubiTag("Good", color: .fairwayGreen)
+                        } else if score >= 4.0 {
+                            ClubiTag("OK", color: .grayFairway)
+                        } else {
+                            ClubiTag("Poor", color: .errorRed)
+                        }
+                        
+                    }
+                }
+                
+                Spacer()
+                
+                // Review date
+                if let latestReview = course.reviews.sorted(by: { $0.dateReviewed > $1.dateReviewed }).first {
+                    Text(formatReviewDate(latestReview.dateReviewed))
+                        .font(ClubiTypography.caption())
+                        .foregroundColor(.lightGray)
+                }
             }
         }
-        .padding(.vertical, 4)
+        .padding(ClubiSpacing.lg)
+        .background(Color.pristineWhite)
+        .cornerRadius(ClubiRadius.lg)
+        .cardShadow()
+    }
+    
+    private func formatReviewDate(_ date: Date) -> String {
+        let calendar = Calendar.current
+        let now = Date()
+        
+        if calendar.isDate(date, inSameDayAs: now) {
+            return "Today"
+        } else if calendar.isDate(date, equalTo: calendar.date(byAdding: .day, value: -1, to: now) ?? now, toGranularity: .day) {
+            return "Yesterday"
+        } else {
+            let daysAgo = calendar.dateComponents([.day], from: date, to: now).day ?? 0
+            if daysAgo < 7 {
+                return "\(daysAgo) days ago"
+            } else {
+                return date.formatted(.dateTime.month(.abbreviated).day())
+            }
+        }
     }
 }
 

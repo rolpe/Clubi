@@ -22,6 +22,9 @@ struct ReviewSessionView: View {
     @State private var tiedCourse: Course?
     @State private var showingCancelAlert = false
     @State private var showingPlayoff = false
+    @State private var scoreAnimationProgress: Double = 0.0
+    @State private var showConfetti = false
+    @State private var titleBounce = false
     
     init(course: Course, answers: [ReviewAnswer], onCompletion: @escaping () -> Void) {
         self.course = course
@@ -36,66 +39,137 @@ struct ReviewSessionView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 32) {
-                Spacer()
+            ZStack {
+                // Background gradient
+                LinearGradient(
+                    gradient: Gradient(colors: [Color.morningMist, Color.pristineWhite]),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
                 
-                // Course Info
-                VStack(spacing: 4) {
-                    Text(course.name)
-                        .font(.title)
-                        .fontWeight(.bold)
-                        .multilineTextAlignment(.center)
-                    Text(course.location)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-                
-                // Score Display
-                VStack(spacing: 16) {
-                    Text("Your Score")
-                        .font(.headline)
-                        .foregroundColor(.secondary)
-                    
-                    VStack(spacing: 4) {
-                        Text("\(calculatedScore, specifier: "%.1f")")
-                            .font(.system(size: 72, weight: .bold, design: .rounded))
-                            .foregroundColor(.green)
+                ScrollView {
+                    VStack(spacing: ClubiSpacing.xl) {
+                        Spacer().frame(height: ClubiSpacing.sm)
                         
-                        Text("out of 10")
-                            .font(.title2)
-                            .foregroundColor(.secondary)
+                        // Course Info Card
+                        VStack(spacing: ClubiSpacing.lg) {
+                            // Completion Badge
+                            HStack {
+                                Spacer()
+                                ClubiTag(
+                                    "✓ Review Complete",
+                                    color: .pristineWhite,
+                                    backgroundColor: .fairwayGreen
+                                )
+                                Spacer()
+                            }
+                            
+                            VStack(spacing: ClubiSpacing.sm) {
+                                Text(course.name)
+                                    .font(ClubiTypography.display(24, weight: .bold))
+                                    .foregroundColor(.charcoal)
+                                    .multilineTextAlignment(.center)
+                                    .scaleEffect(titleBounce ? 1.05 : 1.0)
+                                    .animation(ClubiAnimation.bouncy, value: titleBounce)
+                                
+                                HStack(spacing: ClubiSpacing.xs) {
+                                    Image(systemName: "location.fill")
+                                        .font(.caption)
+                                        .foregroundColor(.grayFairway)
+                                    
+                                    Text(course.location)
+                                        .font(ClubiTypography.body(weight: .medium))
+                                        .foregroundColor(.grayFairway)
+                                }
+                            }
+                        }
+                        .padding(ClubiSpacing.xl)
+                        .background(Color.pristineWhite)
+                        .cornerRadius(ClubiRadius.lg)
+                        .cardShadow()
+                        
+                        // Premium Score Display
+                        VStack(spacing: ClubiSpacing.lg) {
+                            VStack(spacing: ClubiSpacing.md) {
+                                Text("Your Score")
+                                    .font(ClubiTypography.headline(18, weight: .semibold))
+                                    .foregroundColor(.grayFairway)
+                                
+                                ZStack {
+                                    // Background circle
+                                    Circle()
+                                        .stroke(Color.subtleLines, lineWidth: 8)
+                                        .frame(width: 160, height: 160)
+                                    
+                                    // Progress circle
+                                    Circle()
+                                        .trim(from: 0, to: scoreAnimationProgress / 10.0)
+                                        .stroke(scoreColor, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                                        .frame(width: 160, height: 160)
+                                        .rotationEffect(.degrees(-90))
+                                        .animation(.easeOut(duration: 1.5), value: scoreAnimationProgress)
+                                    
+                                    // Score text
+                                    VStack(spacing: ClubiSpacing.xs) {
+                                        Text(scoreEmoji)
+                                            .font(.system(size: 32))
+                                            .scaleEffect(showConfetti ? 1.2 : 1.0)
+                                            .animation(ClubiAnimation.bouncy, value: showConfetti)
+                                        
+                                        Text(String(format: "%.1f", scoreAnimationProgress))
+                                            .font(ClubiTypography.scoreDisplay(48))
+                                            .foregroundColor(scoreColor)
+                                            .contentTransition(.numericText())
+                                        
+                                        Text("out of 10")
+                                            .font(ClubiTypography.body(weight: .medium))
+                                            .foregroundColor(.grayFairway)
+                                    }
+                                }
+                            }
+                            
+                            // Score interpretation with premium styling
+                            VStack(spacing: ClubiSpacing.md) {
+                                Text(scoreInterpretation)
+                                    .font(ClubiTypography.body(16, weight: .medium))
+                                    .foregroundColor(.charcoal)
+                                    .multilineTextAlignment(.center)
+                                    .lineSpacing(4)
+                                    .padding(.horizontal, ClubiSpacing.lg)
+                                    .padding(.vertical, ClubiSpacing.lg)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: ClubiRadius.md)
+                                            .fill(scoreColor.opacity(0.1))
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: ClubiRadius.md)
+                                                    .stroke(scoreColor.opacity(0.3), lineWidth: 1)
+                                            )
+                                    )
+                            }
+                        }
+                        
+                        Spacer().frame(height: ClubiSpacing.md)
+                        
+                        // Premium Action Buttons
+                        VStack(spacing: ClubiSpacing.lg) {
+                            Button("Save Review") {
+                                saveReview()
+                            }
+                            .clubiPrimaryButton()
+                            
+                            Button("Review Answers") {
+                                showingDetailedReview = true
+                            }
+                            .clubiTertiaryButton()
+                        }
+                        .padding(.horizontal, ClubiSpacing.xl)
+                        
+                        Spacer().frame(height: ClubiSpacing.lg)
                     }
-                    
-                    // Score interpretation
-                    Text(scoreInterpretation)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal)
                 }
-                
-                Spacer()
-                
-                // Actions
-                VStack(spacing: 16) {
-                    Button("Save Review") {
-                        saveReview()
-                    }
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.green)
-                    .cornerRadius(12)
-                    
-                    Button("Review Answers") {
-                        showingDetailedReview = true
-                    }
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                }
-                .padding()
             }
+            .background(Color.morningMist)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -135,26 +209,92 @@ struct ReviewSessionView: View {
                 Text("This will discard your review and all playoff results. This cannot be undone.")
             }
         }
+        .onAppear {
+            startScoreAnimation()
+        }
+    }
+    
+    // MARK: - Computed Properties
+    
+    private var scoreColor: Color {
+        switch calculatedScore {
+        case 9.0...10.0:
+            return .freshGrass       // Bright green for 9.0-10.0
+        case 8.0..<9.0:
+            return .fairwayGreen     // Medium-bright green for 8.0-8.9
+        case 7.0..<8.0:
+            return .mediumGreen      // Medium green for 7.0-7.9
+        case 5.0..<7.0:
+            return .darkGreen        // Dark green for 5.0-6.9
+        default:
+            return .goldenTournament // Brown for below 5.0
+        }
+    }
+    
+    private var scoreEmoji: String {
+        switch calculatedScore {
+        case 9.0...10.0:
+            return "🏆"
+        case 8.0..<9.0:
+            return "⭐"
+        case 7.0..<8.0:
+            return "👏"
+        case 6.0..<7.0:
+            return "👍"
+        case 5.0..<6.0:
+            return "👌"
+        default:
+            return "🤔"
+        }
     }
     
     private var scoreInterpretation: String {
         switch calculatedScore {
         case 9.0...10.0:
-            return "Outstanding course! This is a must-play."
+            return "Outstanding course! This is a must-play destination that exceeds all expectations."
         case 8.0..<9.0:
-            return "Excellent course. Highly recommended."
+            return "Excellent course. Highly recommended for golfers seeking a premium experience."
         case 7.0..<8.0:
-            return "Very good course. Worth playing again."
+            return "Very good course. Definitely worth playing again with memorable holes."
         case 6.0..<7.0:
-            return "Good course with some nice features."
+            return "Good course with some nice features. A solid choice for your next round."
         case 5.0..<6.0:
-            return "Average course. It's okay."
+            return "Average course. It's okay but nothing particularly special stands out."
         case 4.0..<5.0:
-            return "Below average. Some issues noted."
+            return "Below average. Some issues noted that detract from the experience."
         case 3.0..<4.0:
-            return "Poor course with significant problems."
+            return "Poor course with significant problems. Not recommended."
         default:
-            return "Not recommended."
+            return "Not recommended. Consider other options for a better golf experience."
+        }
+    }
+    
+    // MARK: - Animation Methods
+    
+    private func startScoreAnimation() {
+        // Animate title bounce
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            withAnimation(ClubiAnimation.bouncy) {
+                titleBounce = true
+            }
+        }
+        
+        // Animate score counting
+        withAnimation(.easeOut(duration: 1.5)) {
+            scoreAnimationProgress = calculatedScore
+        }
+        
+        // Show confetti for high scores
+        if calculatedScore >= 8.0 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                withAnimation(ClubiAnimation.bouncy) {
+                    showConfetti = true
+                }
+                
+                // Haptic celebration
+                let impactFeedback = UIImpactFeedbackGenerator(style: .heavy)
+                impactFeedback.impactOccurred()
+            }
         }
     }
     

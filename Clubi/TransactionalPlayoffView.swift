@@ -51,192 +51,164 @@ struct TransactionalPlayoffView: View {
     private var playoffTitleColor: Color {
         switch playoffCount {
         case 1:
-            return .green
+            return Color.fairwayGreen
         case 2:
-            return .orange
+            return Color.sunsetOrange
         case 3:
-            return .red
+            return Color.errorRed
         default:
-            return .purple
+            return Color.augustaPine
+        }
+    }
+    
+    private var playoffGradient: LinearGradient {
+        switch playoffCount {
+        case 1:
+            return LinearGradient(
+                gradient: Gradient(colors: [Color.fairwayGreen.opacity(0.8), Color.freshGrass.opacity(0.6)]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case 2:
+            return LinearGradient(
+                gradient: Gradient(colors: [Color.sunsetOrange.opacity(0.8), Color.goldenTournament.opacity(0.6)]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case 3:
+            return LinearGradient(
+                gradient: Gradient(colors: [Color.errorRed.opacity(0.8), Color.sunsetOrange.opacity(0.6)]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        default:
+            return LinearGradient(
+                gradient: Gradient(colors: [Color.augustaPine.opacity(0.8), Color.fairwayGreen.opacity(0.6)]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
         }
     }
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                Spacer()
-                    .frame(maxHeight: 60)
+            ZStack {
+                // Background gradient
+                playoffGradient
+                    .ignoresSafeArea()
                 
-                // Playoff Title
-                VStack(spacing: 16) {
-                    Text(playoffTitle)
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
-                        .foregroundColor(playoffTitleColor)
+                // Animated background elements
+                ZStack {
+                    Circle()
+                        .fill(Color.pristineWhite.opacity(0.1))
+                        .frame(width: 300, height: 300)
+                        .offset(x: -100, y: -200)
                         .scaleEffect(titleBounce ? 1.2 : 1.0)
-                        .animation(.spring(response: 0.5, dampingFraction: 0.6), value: titleBounce)
+                        .animation(ClubiAnimation.smooth, value: titleBounce)
                     
-                    Text("Which course do you prefer?")
-                        .font(.headline)
-                        .foregroundColor(.primary)
+                    Circle()
+                        .fill(Color.pristineWhite.opacity(0.05))
+                        .frame(width: 200, height: 200)
+                        .offset(x: 120, y: 150)
+                        .scaleEffect(titleBounce ? 0.8 : 1.0)
+                        .animation(ClubiAnimation.smooth.delay(0.2), value: titleBounce)
                 }
                 
-                Spacer()
-                    .frame(maxHeight: 60)
-                
-                // VS Section
-                VStack(spacing: 16) {
-                    // Course Comparison
-                    HStack(spacing: 0) {
-                        // Left Course (New Course)
-                        VStack(spacing: 12) {
-                            Button(action: { 
-                                // Haptic feedback
-                                let impactFeedback = UIImpactFeedbackGenerator(style: getHapticStyle())
-                                impactFeedback.impactOccurred()
+                ScrollView {
+                    VStack(spacing: ClubiSpacing.xxl) {
+                        Spacer().frame(height: ClubiSpacing.lg)
+                        
+                        // Playoff Header
+                        VStack(spacing: ClubiSpacing.lg) {
+                            VStack(spacing: ClubiSpacing.md) {
+                                Text(playoffTitle)
+                                    .font(ClubiTypography.display(28, weight: .black))
+                                    .foregroundColor(Color.pristineWhite)
+                                    .shadow(color: Color.charcoal.opacity(0.3), radius: 4, x: 0, y: 2)
+                                    .scaleEffect(titleBounce ? 1.15 : 1.0)
+                                    .animation(ClubiAnimation.bouncy, value: titleBounce)
                                 
-                                selectedWinner = reviewSession.course
-                                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                                    showingResult = true
-                                    leftCourseScale = 1.1
-                                }
+                                Rectangle()
+                                    .fill(Color.pristineWhite.opacity(0.8))
+                                    .frame(width: 60, height: 2)
+                                    .scaleEffect(x: titleBounce ? 1.5 : 1.0)
+                                    .animation(ClubiAnimation.smooth, value: titleBounce)
                                 
-                                // Reset scale after animation
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                    withAnimation(.easeOut(duration: 0.2)) {
-                                        leftCourseScale = 1.0
-                                    }
-                                }
-                            }) {
-                                VStack(spacing: 8) {
-                                    // Course Info
-                                    VStack(spacing: 4) {
-                                        Text(reviewSession.course.name)
-                                            .font(.headline)
-                                            .fontWeight(.semibold)
-                                            .multilineTextAlignment(.center)
-                                            .lineLimit(2)
-                                        
-                                        Text(reviewSession.course.location)
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                            .multilineTextAlignment(.center)
-                                            .lineLimit(1)
-                                    }
-                                    
-                                    // Winner Indicator (always reserves space)
-                                    Text(selectedWinner == reviewSession.course ? "🏆 WINNER" : "")
-                                        .font(.caption)
-                                        .fontWeight(.bold)
-                                        .foregroundColor(.green)
-                                        .frame(height: 16) // Fixed height to prevent layout shift
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .fill(selectedWinner == reviewSession.course ? Color.green.opacity(0.1) : Color(.systemGray6))
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 16)
-                                                .stroke(selectedWinner == reviewSession.course ? Color.green : Color.clear, lineWidth: 2)
-                                        )
-                                )
+                                Text("Which course do you prefer?")
+                                    .font(ClubiTypography.headline(18, weight: .semibold))
+                                    .foregroundColor(Color.pristineWhite)
+                                    .shadow(color: Color.charcoal.opacity(0.2), radius: 2, x: 0, y: 1)
                             }
-                            .buttonStyle(.plain)
+                        }
+                        .padding(ClubiSpacing.xl)
+                        .background(
+                            RoundedRectangle(cornerRadius: ClubiRadius.lg)
+                                .fill(Color.charcoal.opacity(0.3))
+                                .background(
+                                    RoundedRectangle(cornerRadius: ClubiRadius.lg)
+                                        .fill(.ultraThinMaterial)
+                                )
+                        )
+                        .cardShadow()
+                        
+                        // Battle Section
+                        VStack(spacing: ClubiSpacing.lg) {
+                            // Your Review Course Card
+                            courseCardButton(
+                                course: reviewSession.course,
+                                label: "YOUR REVIEW",
+                                labelColor: Color.goldenTournament,
+                                isSelected: selectedWinner == reviewSession.course,
+                                action: {
+                                    selectWinner(reviewSession.course, scale: $leftCourseScale)
+                                }
+                            )
                             .scaleEffect(leftCourseScale)
-                        }
-                        
-                        // VS Divider
-                        VStack {
+                            
+                            // VS Divider
                             Text("VS")
-                                .font(.title)
-                                .fontWeight(.bold)
-                                .foregroundColor(.secondary)
-                        }
-                        .frame(width: 60)
-                        
-                        // Right Course (Tied Course)
-                        VStack(spacing: 12) {
-                            Button(action: { 
-                                // Haptic feedback
-                                let impactFeedback = UIImpactFeedbackGenerator(style: getHapticStyle())
-                                impactFeedback.impactOccurred()
-                                
-                                selectedWinner = tiedCourse
-                                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                                    showingResult = true
-                                    rightCourseScale = 1.1
+                                .font(ClubiTypography.display(28, weight: .black))
+                                .foregroundColor(Color.pristineWhite)
+                                .shadow(color: Color.charcoal.opacity(0.5), radius: 3, x: 0, y: 2)
+                                .scaleEffect(titleBounce ? 1.1 : 1.0)
+                                .animation(ClubiAnimation.bouncy, value: titleBounce)
+                            
+                            // Challenger Course Card
+                            courseCardButton(
+                                course: tiedCourse,
+                                label: "CHALLENGER",
+                                labelColor: Color.augustaPine,
+                                isSelected: selectedWinner == tiedCourse,
+                                action: {
+                                    selectWinner(tiedCourse, scale: $rightCourseScale)
                                 }
-                                
-                                // Reset scale after animation
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                    withAnimation(.easeOut(duration: 0.2)) {
-                                        rightCourseScale = 1.0
-                                    }
-                                }
-                            }) {
-                                VStack(spacing: 8) {
-                                    // Course Info
-                                    VStack(spacing: 4) {
-                                        Text(tiedCourse.name)
-                                            .font(.headline)
-                                            .fontWeight(.semibold)
-                                            .multilineTextAlignment(.center)
-                                            .lineLimit(2)
-                                        
-                                        Text(tiedCourse.location)
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                            .multilineTextAlignment(.center)
-                                            .lineLimit(1)
-                                    }
-                                    
-                                    // Winner Indicator (always reserves space)
-                                    Text(selectedWinner == tiedCourse ? "🏆 WINNER" : "")
-                                        .font(.caption)
-                                        .fontWeight(.bold)
-                                        .foregroundColor(.green)
-                                        .frame(height: 16) // Fixed height to prevent layout shift
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .fill(selectedWinner == tiedCourse ? Color.green.opacity(0.1) : Color(.systemGray6))
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 16)
-                                                .stroke(selectedWinner == tiedCourse ? Color.green : Color.clear, lineWidth: 2)
-                                        )
-                                )
-                            }
-                            .buttonStyle(.plain)
+                            )
                             .scaleEffect(rightCourseScale)
                         }
-                    }
-                    .padding(.horizontal, 20)
-                    
-                    // Confirm Button
-                    if selectedWinner != nil {
-                        Button("Confirm Winner") {
-                            completePlayoff()
+                        
+                        // Confirm Button
+                        if selectedWinner != nil {
+                            Button(action: {
+                                let impactFeedback = UIImpactFeedbackGenerator(style: .heavy)
+                                impactFeedback.impactOccurred()
+                                completePlayoff()
+                            }) {
+                                Text("Confirm")
+                                    .font(ClubiTypography.headline(weight: .bold))
+                                .foregroundColor(Color.pristineWhite)
+                            }
+                            .clubiPrimaryButton()
+                            .scaleEffect(showingResult ? 1.05 : 1.0)
+                            .animation(ClubiAnimation.bouncy, value: showingResult)
+                            .transition(.scale.combined(with: .opacity))
+                            .padding(.horizontal, ClubiSpacing.xl)
                         }
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.green)
-                        )
-                        .padding(.horizontal, 32)
-                        .transition(.scale.combined(with: .opacity))
+                        
+                        Spacer().frame(height: ClubiSpacing.xxl)
                     }
                 }
-                
-                Spacer()
             }
-            .background(Color(.systemBackground))
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarHidden(true)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
@@ -256,29 +228,136 @@ struct TransactionalPlayoffView: View {
             .alert("Cancel Review?", isPresented: $showingCancelAlert) {
                 Button("Keep Reviewing", role: .cancel) {}
                 Button("Discard Review", role: .destructive) {
-                    onCancel() // This will trigger the cancellation chain back to course list
+                    onCancel()
                 }
             } message: {
                 Text("This will discard your entire review including all playoff results. This cannot be undone.")
             }
-        }
-        .onAppear {
-            // Bounce the title when view appears
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                withAnimation(.spring(response: 0.5, dampingFraction: 0.6)) {
-                    titleBounce = true
-                }
-                
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                        titleBounce = false
-                    }
-                }
+            .onAppear {
+                startDramaticEntrance()
             }
         }
     }
     
-    // MARK: - Helper Functions
+    // MARK: - Helper Views
+    
+    @ViewBuilder
+    private func courseCardButton(
+        course: Course,
+        label: String,
+        labelColor: Color,
+        isSelected: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            VStack(spacing: ClubiSpacing.md) {
+                // Header Badge
+                HStack {
+                    Text(label)
+                        .font(ClubiTypography.caption(weight: .bold))
+                        .foregroundColor(isSelected ? Color.pristineWhite : labelColor)
+                        .padding(.horizontal, ClubiSpacing.sm)
+                        .padding(.vertical, ClubiSpacing.xs)
+                        .background(
+                            Capsule()
+                                .fill(isSelected ? labelColor.opacity(0.3) : labelColor.opacity(0.1))
+                        )
+                    Spacer()
+                    
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.title2)
+                            .foregroundColor(Color.pristineWhite)
+                            .scaleEffect(showingResult ? 1.2 : 1.0)
+                            .animation(ClubiAnimation.bouncy, value: showingResult)
+                    }
+                }
+                
+                // Course Info
+                VStack(spacing: ClubiSpacing.sm) {
+                    Text(course.name)
+                        .font(ClubiTypography.display(20, weight: .bold))
+                        .foregroundColor(isSelected ? Color.pristineWhite : Color.charcoal)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    HStack(spacing: ClubiSpacing.xs) {
+                        Image(systemName: "location.fill")
+                            .font(.caption)
+                            .foregroundColor(isSelected ? Color.pristineWhite.opacity(0.8) : Color.grayFairway)
+                        
+                        Text(course.location)
+                            .font(ClubiTypography.body(16, weight: .medium))
+                            .foregroundColor(isSelected ? Color.pristineWhite.opacity(0.8) : Color.grayFairway)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        
+                        Spacer()
+                    }
+                }
+                
+            }
+            .padding(ClubiSpacing.xl)
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: ClubiRadius.lg)
+                    .fill(isSelected ? playoffTitleColor : Color.pristineWhite)
+                    .shadow(color: Color.charcoal.opacity(0.2), radius: 8, x: 0, y: 4)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: ClubiRadius.lg)
+                            .stroke(
+                                isSelected ? Color.pristineWhite.opacity(0.6) : Color.augustaPine.opacity(0.3),
+                                lineWidth: isSelected ? 3 : 2
+                            )
+                    )
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    // MARK: - Actions
+    
+    private func selectWinner(_ winner: Course, scale: Binding<Double>) {
+        let impactFeedback = UIImpactFeedbackGenerator(style: getHapticStyle())
+        impactFeedback.impactOccurred()
+        
+        selectedWinner = winner
+        withAnimation(ClubiAnimation.bouncy) {
+            showingResult = true
+            scale.wrappedValue = 1.05
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            withAnimation(ClubiAnimation.smooth) {
+                scale.wrappedValue = 1.0
+            }
+        }
+    }
+    
+    private func startDramaticEntrance() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            withAnimation(ClubiAnimation.bouncy) {
+                titleBounce = true
+            }
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            withAnimation(ClubiAnimation.bouncy) {
+                titleBounce = false
+            }
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            withAnimation(ClubiAnimation.quick) {
+                titleBounce = true
+            }
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+            withAnimation(ClubiAnimation.smooth) {
+                titleBounce = false
+            }
+        }
+    }
     
     private func getHapticStyle() -> UIImpactFeedbackGenerator.FeedbackStyle {
         switch playoffCount {
@@ -291,49 +370,37 @@ struct TransactionalPlayoffView: View {
         }
     }
     
-    // MARK: - Actions
-    
     private func completePlayoff() {
         guard let winner = selectedWinner else { return }
         
-        // Create playoff result (no immediate persistence!)
         let playoffResult = PlayoffResult(
             opponent: tiedCourse,
             winner: winner.id
         )
         
-        // Add to session (still in memory only)
         reviewSession.addPlayoffResult(playoffResult)
         
-        // Check for chain playoff (limit to 3 total playoffs max)
         if playoffCount < 3 {
             if let nextTied = findTiedCourse(withScore: reviewSession.getFinalScore(), excluding: [reviewSession.course.id, tiedCourse.id]) {
-                // CHAIN PLAYOFF! 🔥
                 nextTiedCourse = nextTied
                 return
             }
         }
         
-        // No more ties or hit limit - complete the flow
         onCompletion()
     }
     
     private func findTiedCourse(withScore targetScore: Double, excluding excludedIds: [UUID]) -> Course? {
-        // Look for courses with the target score (within 0.05 tolerance)
         for otherCourse in allCourses {
-            // Skip excluded courses
             if excludedIds.contains(otherCourse.id) { continue }
             
-            // Skip courses already involved in playoffs this session
             let alreadyInPlayoffs = reviewSession.playoffResults.contains { result in
                 result.opponent.id == otherCourse.id
             }
             if alreadyInPlayoffs { continue }
             
-            // Check if this course has any reviews
             guard let otherScore = otherCourse.latestScore else { continue }
             
-            // Check for tie (exact match or very close)
             if abs(otherScore - targetScore) < 0.05 {
                 return otherCourse
             }
