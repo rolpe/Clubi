@@ -15,15 +15,17 @@ final class Course: Identifiable {
     var name: String
     var location: String
     var dateAdded: Date
+    var userId: String // Firebase Auth UID of the user who saved this course
     
     // Relationship to reviews
     @Relationship(deleteRule: .cascade) var reviews: [Review] = []
     
-    init(name: String, location: String) {
+    init(name: String, location: String, userId: String) {
         self.id = UUID()
         self.name = name
         self.location = location
         self.dateAdded = Date()
+        self.userId = userId
     }
     
     // Computed property to get the latest review score

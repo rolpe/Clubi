@@ -284,7 +284,7 @@ struct PremiumAnswerOptionView: View {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try! ModelContainer(for: Course.self, configurations: config)
     
-    let course = Course(name: "Pebble Beach", location: "Pebble Beach, CA")
+    let course = Course(name: "Pebble Beach", location: "Pebble Beach, CA", userId: "preview")
     
     return ReviewFlowView(course: course) {
         // Preview completion handler

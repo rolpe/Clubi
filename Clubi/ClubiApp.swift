@@ -19,7 +19,9 @@ struct ClubiApp: App {
             Course.self,
             Review.self,
         ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        // Use a versioned URL to force a clean database for the new schema
+        let storeURL = URL.documentsDirectory.appending(path: "Clubi_v2.store")
+        let modelConfiguration = ModelConfiguration(schema: schema, url: storeURL)
 
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])

@@ -17,7 +17,7 @@ enum SortOption: String, CaseIterable {
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query private var courses: [Course]
+    @State private var courses: [Course] = []
     @EnvironmentObject var authManager: AuthenticationManager
     @State private var searchText = ""
     @State private var showingAddCourse = false
@@ -352,6 +352,7 @@ struct ContentView: View {
                 AddCourseView(searchText: searchText) { newCourse in
                     // When course is added, dismiss the sheet and start review
                     showingAddCourse = false
+                    loadUserCourses() // Refresh the list
                     selectedCourse = newCourse
                     // Clear search since we'll show the review flow
                     searchTimer?.invalidate()
@@ -363,6 +364,8 @@ struct ContentView: View {
                 ReviewFlowView(course: course) {
                     // Completion handler to dismiss the entire review flow
                     selectedCourse = nil
+                    // Refresh course list to show updated reviews
+                    loadUserCourses()
                     // Clear search to show updated course list
                     searchTimer?.invalidate()
                     searchText = ""
@@ -410,6 +413,12 @@ struct ContentView: View {
                 }
             } message: {
                 Text("This will permanently delete all courses and reviews. This action cannot be undone.")
+            }
+            .onAppear {
+                loadUserCourses()
+            }
+            .onChange(of: authManager.user?.uid) { _, _ in
+                loadUserCourses()
             }
 
         }
@@ -481,12 +490,14 @@ struct ContentView: View {
     
     private func addGoogleCourseToLocal(_ googleResult: CourseSearchResult) {
         // Create a new course from the Google result with cleaned address
+        guard let userId = authManager.user?.uid else { return }
         let cleanedLocation = cleanGoogleAddress(googleResult.address)
-        let newCourse = Course(name: googleResult.name, location: cleanedLocation)
+        let newCourse = Course(name: googleResult.name, location: cleanedLocation, userId: userId)
         modelContext.insert(newCourse)
         
         // Save and immediately start review
         try? modelContext.save()
+        loadUserCourses() // Refresh the list
         selectedCourse = newCourse
     }
     
@@ -510,7 +521,8 @@ struct ContentView: View {
         
         for (name, location, answerIndices) in testCourses {
             // Create the course
-            let course = Course(name: name, location: location)
+            guard let userId = authManager.user?.uid else { continue }
+            let course = Course(name: name, location: location, userId: userId)
             modelContext.insert(course)
             
             // Create review answers
@@ -537,6 +549,9 @@ struct ContentView: View {
         
         // Save all changes
         try? modelContext.save()
+        
+        // Refresh the courses list
+        loadUserCourses()
         
         print("🏌️ Added test courses with TRIPLE PLAYOFF setup!")
         print("📋 TO TRIGGER TRIPLE PLAYOFF:")
@@ -610,6 +625,27 @@ struct ContentView: View {
             let city = components[components.count - 2]
             let country = components[components.count - 1]
             return "\(city), \(country)"
+        }
+    }
+    
+    private func loadUserCourses() {
+        guard let userId = authManager.user?.uid else {
+            courses = []
+            return
+        }
+        
+        // Fetch only courses for the current user
+        let descriptor = FetchDescriptor<Course>(
+            predicate: #Predicate<Course> { course in
+                course.userId == userId
+            }
+        )
+        
+        do {
+            courses = try modelContext.fetch(descriptor)
+        } catch {
+            print("Error loading user courses: \(error)")
+            courses = []
         }
     }
 }
@@ -781,6 +817,7 @@ struct CourseRowView: View {
 struct AddCourseView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var authManager: AuthenticationManager
     
     let searchText: String
     let onCourseAdded: (Course) -> Void
@@ -842,9 +879,10 @@ struct AddCourseView: View {
     }
     
     private func addCourse() {
+        guard let userId = authManager.user?.uid else { return }
         let cleanedLocation = smartFormatLocation(courseLocation)
         let newCourse = Course(name: courseName.trimmingCharacters(in: .whitespacesAndNewlines), 
-                              location: cleanedLocation)
+                              location: cleanedLocation, userId: userId)
         modelContext.insert(newCourse)
         
         try? modelContext.save()

@@ -350,7 +350,7 @@ struct ReviewSessionView: View {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try! ModelContainer(for: Course.self, configurations: config)
     
-    let course = Course(name: "Pebble Beach", location: "Pebble Beach, CA")
+    let course = Course(name: "Pebble Beach", location: "Pebble Beach, CA", userId: "preview")
     let answers = [ReviewAnswer(questionId: 0, selectedAnswerIndex: 0)]
     
     return ReviewSessionView(course: course, answers: answers) {

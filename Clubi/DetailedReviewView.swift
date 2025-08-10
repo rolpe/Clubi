@@ -148,7 +148,7 @@ struct QuestionAnswerView: View {
 }
 
 #Preview {
-    let course = Course(name: "Pebble Beach", location: "Pebble Beach, CA")
+    let course = Course(name: "Pebble Beach", location: "Pebble Beach, CA", userId: "preview")
     let answers = [
         ReviewAnswer(questionId: 0, selectedAnswerIndex: 1),
         ReviewAnswer(questionId: 1, selectedAnswerIndex: 2),

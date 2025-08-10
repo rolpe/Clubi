@@ -411,8 +411,8 @@ struct TransactionalPlayoffView: View {
 }
 
 #Preview {
-    let course1 = Course(name: "Augusta National", location: "Augusta, GA")
-    let course2 = Course(name: "Pebble Beach", location: "Pebble Beach, CA")
+    let course1 = Course(name: "Augusta National", location: "Augusta, GA", userId: "preview")
+    let course2 = Course(name: "Pebble Beach", location: "Pebble Beach, CA", userId: "preview")
     let answers = [ReviewAnswer(questionId: 0, selectedAnswerIndex: 0)]
     let session = ReviewSession(course: course1, answers: answers)
     
