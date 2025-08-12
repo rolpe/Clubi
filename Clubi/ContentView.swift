@@ -19,6 +19,7 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var courses: [Course] = []
     @EnvironmentObject var authManager: AuthenticationManager
+    @StateObject private var profileManager = MemberProfileManager()
     @State private var searchText = ""
     @State private var showingAddCourse = false
     @State private var selectedCourse: Course?
@@ -27,6 +28,9 @@ struct ContentView: View {
     @State private var showingDeleteAlert = false
     @State private var sortOption: SortOption = .highestToLowest
     @State private var showingClearAllAlert = false
+    @State private var showingMemberSearch = false
+    @State private var showingEditProfile = false
+    @State private var showingMyProfile = false
     
     // Google Places integration
     @State private var googleResults: [CourseSearchResult] = []
@@ -101,7 +105,16 @@ struct ContentView: View {
                             }
                         Spacer()
                         
-                        HStack(spacing: 16) {
+                        HStack(spacing: 20) {
+                            // Members Button
+                            Button(action: {
+                                showingMemberSearch = true
+                            }) {
+                                Image(systemName: "person.2.fill")
+                                    .font(.title2)
+                                    .foregroundColor(.augustaPine)
+                            }
+                            
                             // Account Menu
                             Menu {
                                 if let userEmail = authManager.user?.email {
@@ -113,6 +126,15 @@ struct ContentView: View {
                                 Divider()
                                 
                                 Button(action: {
+                                    showingMyProfile = true
+                                }) {
+                                    HStack {
+                                        Image(systemName: "person.circle")
+                                        Text("My Profile")
+                                    }
+                                }
+                                
+                                Button(action: {
                                     signOut()
                                 }) {
                                     HStack {
@@ -121,40 +143,9 @@ struct ContentView: View {
                                     }
                                 }
                             } label: {
-                                VStack(alignment: .center, spacing: 2) {
-                                    Image(systemName: "person.circle")
-                                        .font(.title3)
-                                        .foregroundColor(.augustaPine)
-                                    Text("Account")
-                                        .font(ClubiTypography.caption())
-                                        .foregroundColor(.grayFairway)
-                                }
-                            }
-                            
-                            // Sort Menu
-                            Menu {
-                                ForEach(SortOption.allCases, id: \.self) { option in
-                                    Button(action: {
-                                        sortOption = option
-                                    }) {
-                                        HStack {
-                                            Text(option.rawValue)
-                                            Spacer()
-                                            if sortOption == option {
-                                                Image(systemName: "checkmark")
-                                            }
-                                        }
-                                    }
-                                }
-                            } label: {
-                                VStack(alignment: .center, spacing: 2) {
-                                    Image(systemName: "arrow.up.arrow.down")
-                                        .font(.title3)
-                                        .foregroundColor(.augustaPine)
-                                    Text("Sort")
-                                        .font(ClubiTypography.caption())
-                                        .foregroundColor(.grayFairway)
-                                }
+                                Image(systemName: "person.circle")
+                                    .font(.title2)
+                                    .foregroundColor(.augustaPine)
                             }
                         }
                     }
@@ -227,6 +218,54 @@ struct ContentView: View {
                     // Course Results with Local and Google sections
                     VStack(spacing: 0) {
             List {
+                            // Sort Button Section
+                            Section {
+                                HStack {
+                                    Menu {
+                                        ForEach(SortOption.allCases, id: \.self) { option in
+                                            Button(action: {
+                                                sortOption = option
+                                            }) {
+                                                HStack {
+                                                    Text(option.rawValue)
+                                                    Spacer()
+                                                    if sortOption == option {
+                                                        Image(systemName: "checkmark")
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    } label: {
+                                        HStack(spacing: ClubiSpacing.sm) {
+                                            Image(systemName: "arrow.up.arrow.down")
+                                                .font(.system(size: 14))
+                                                .foregroundColor(.augustaPine)
+                                            Text("Sort: \(sortOption.rawValue)")
+                                                .font(ClubiTypography.body(14, weight: .medium))
+                                                .foregroundColor(.charcoal)
+                                        }
+                                        .padding(.horizontal, ClubiSpacing.md)
+                                        .padding(.vertical, ClubiSpacing.sm)
+                                        .background(Color.pristineWhite)
+                                        .cornerRadius(ClubiRadius.sm)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: ClubiRadius.sm)
+                                                .stroke(Color.subtleLines, lineWidth: 1)
+                                        )
+                                    }
+                                    
+                                    Spacer()
+                                }
+                            }
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(
+                                top: ClubiSpacing.sm,
+                                leading: ClubiSpacing.lg,
+                                bottom: ClubiSpacing.sm,
+                                trailing: ClubiSpacing.lg
+                            ))
+                            
                             // Your Courses Section  
                             if !filteredCourses.isEmpty {
                                 Section {
@@ -259,11 +298,6 @@ struct ContentView: View {
                                                 .tint(.errorRed)
                                             }
                                     }
-                                } header: {
-                                    Text("Your Courses")
-                                        .font(ClubiTypography.headline(16))
-                                        .foregroundColor(.augustaPine)
-                                        .textCase(.none)
                                 }
                                 .id("your-courses-section")
                             }
@@ -329,18 +363,6 @@ struct ContentView: View {
                             }
                         }
                         .listStyle(.plain)
-                        
-                        // Sort indicator (only show if we have local courses)
-                        if !filteredCourses.isEmpty {
-                            HStack {
-                                Text("Sorted by: \(sortOption.rawValue)")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                Spacer()
-                            }
-                            .padding(.horizontal)
-                            .padding(.bottom, 8)
-                        }
                     }
                 }
             }
@@ -391,6 +413,44 @@ struct ContentView: View {
                         // On "Review Again" tapped
                         selectedCourseForDetail = nil
                         selectedCourse = course
+                    }
+                }
+            }
+            .sheet(isPresented: $showingMemberSearch) {
+                MemberSearchView()
+            }
+            .sheet(isPresented: $showingEditProfile) {
+                ProfileSetupView(isEditing: true) {
+                    // Profile updated - no action needed as MainCoordinatorView will handle the updates
+                }
+            }
+            .sheet(isPresented: $showingMyProfile) {
+                if let currentProfile = profileManager.currentMemberProfile {
+                    MemberDetailView(member: currentProfile)
+                } else {
+                    // Fallback loading view if profile not loaded yet
+                    NavigationView {
+                        VStack(spacing: ClubiSpacing.lg) {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .augustaPine))
+                                .scaleEffect(1.2)
+                            
+                            Text("Loading profile...")
+                                .font(ClubiTypography.body())
+                                .foregroundColor(.grayFairway)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color.morningMist)
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .navigationBarTrailing) {
+                                Button("Close") {
+                                    showingMyProfile = false
+                                }
+                                .font(ClubiTypography.body(weight: .medium))
+                                .foregroundColor(.augustaPine)
+                            }
+                        }
                     }
                 }
             }

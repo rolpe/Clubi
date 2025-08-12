@@ -32,14 +32,8 @@ struct ClubiApp: App {
 
     var body: some Scene {
         WindowGroup {
-            Group {
-                if authManager.isAuthenticated {
-                    ContentView()
-                } else {
-                    AuthenticationView()
-                }
-            }
-            .environmentObject(authManager)
+            MainCoordinatorView()
+                .environmentObject(authManager)
         }
         .modelContainer(sharedModelContainer)
     }
