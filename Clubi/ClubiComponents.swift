@@ -218,18 +218,18 @@ struct ClubiScoreDisplay: View {
     }
     
     private var scoreColor: Color {
-        let percentage = score / maxScore
-        switch percentage {
-        case 0.9...:
-            return .freshGrass      // Bright green for 9.0-10.0
-        case 0.8..<0.9:
-            return .fairwayGreen    // Medium-bright green for 8.0-8.9
-        case 0.7..<0.8:
-            return .mediumGreen     // Medium green for 7.0-7.9
-        case 0.5..<0.7:
-            return .darkGreen       // Dark green for 5.0-6.9
-        default:
-            return .goldenTournament // Brown for below 5.0
+        if score >= 9.0 {
+            return .goldenTournament  // Exceptional
+        } else if score >= 8.0 {
+            return .freshGrass        // Excellent
+        } else if score >= 7.0 {
+            return .augustaPine       // Very Good
+        } else if score >= 6.0 {
+            return .fairwayGreen      // Good
+        } else if score >= 4.0 {
+            return .grayFairway       // OK
+        } else {
+            return .errorRed          // Poor
         }
     }
 }

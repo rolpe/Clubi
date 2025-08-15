@@ -31,6 +31,7 @@ struct ContentView: View {
     @State private var showingMemberSearch = false
     @State private var showingEditProfile = false
     @State private var showingMyProfile = false
+    @State private var showingFollowing = false
     
     // Google Places integration
     @State private var googleResults: [CourseSearchResult] = []
@@ -106,10 +107,26 @@ struct ContentView: View {
                         Spacer()
                         
                         HStack(spacing: 20) {
-                            // Members Button
-                            Button(action: {
-                                showingMemberSearch = true
-                            }) {
+                            // Members Menu
+                            Menu {
+                                Button(action: {
+                                    showingMemberSearch = true
+                                }) {
+                                    HStack {
+                                        Image(systemName: "magnifyingglass")
+                                        Text("Find Members")
+                                    }
+                                }
+                                
+                                Button(action: {
+                                    showingFollowing = true
+                                }) {
+                                    HStack {
+                                        Image(systemName: "person.2.arrow.right")
+                                        Text("Following")
+                                    }
+                                }
+                            } label: {
                                 Image(systemName: "person.2.fill")
                                     .font(.title2)
                                     .foregroundColor(.augustaPine)
@@ -446,6 +463,35 @@ struct ContentView: View {
                             ToolbarItem(placement: .navigationBarTrailing) {
                                 Button("Close") {
                                     showingMyProfile = false
+                                }
+                                .font(ClubiTypography.body(weight: .medium))
+                                .foregroundColor(.augustaPine)
+                            }
+                        }
+                    }
+                }
+            }
+            .sheet(isPresented: $showingFollowing) {
+                if let currentUserId = authManager.user?.uid {
+                    FollowingListView(userId: currentUserId) {
+                        showingMemberSearch = true
+                    }
+                } else {
+                    // Fallback if no user ID available
+                    NavigationView {
+                        VStack(spacing: ClubiSpacing.lg) {
+                            Text("Please sign in to view your following list")
+                                .font(ClubiTypography.body())
+                                .foregroundColor(.grayFairway)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color.morningMist)
+                        .navigationTitle("Following")
+                        .navigationBarTitleDisplayMode(.large)
+                        .toolbar {
+                            ToolbarItem(placement: .navigationBarTrailing) {
+                                Button("Close") {
+                                    showingFollowing = false
                                 }
                                 .font(ClubiTypography.body(weight: .medium))
                                 .foregroundColor(.augustaPine)
