@@ -8,8 +8,7 @@
 import SwiftUI
 
 struct FeedView: View {
-    @State private var activities: [FeedActivity] = []
-    @State private var isLoading = false
+    @StateObject private var feedManager = FeedManager.shared
     
     var body: some View {
         NavigationView {
@@ -29,7 +28,9 @@ struct FeedView: View {
                 .padding(.bottom, ClubiSpacing.md)
                 
                 // Content
-                if activities.isEmpty && !isLoading {
+                if feedManager.isLoading {
+                    loadingView
+                } else if feedManager.activities.isEmpty {
                     emptyStateView
                 } else {
                     activitiesList
@@ -38,9 +39,30 @@ struct FeedView: View {
             .background(Color.morningMist)
             .navigationBarHidden(true)
             .onAppear {
-                loadMockActivities()
+                Task {
+                    await feedManager.loadFeedActivities()
+                }
+                feedManager.startListeningForFeedUpdates()
+            }
+            .onDisappear {
+                feedManager.stopListening()
             }
         }
+    }
+    
+    // MARK: - Loading View
+    
+    private var loadingView: some View {
+        VStack(spacing: ClubiSpacing.lg) {
+            ProgressView()
+                .progressViewStyle(CircularProgressViewStyle(tint: .augustaPine))
+                .scaleEffect(1.2)
+            
+            Text("Loading your feed...")
+                .font(ClubiTypography.body())
+                .foregroundColor(.grayFairway)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     // MARK: - Empty State View
@@ -80,71 +102,18 @@ struct FeedView: View {
     private var activitiesList: some View {
         ScrollView {
             LazyVStack(spacing: ClubiSpacing.md) {
-                ForEach(activities, id: \.id) { activity in
+                ForEach(feedManager.activities, id: \.id) { activity in
                     FeedActivityRow(activity: activity)
                 }
             }
             .padding(.horizontal, ClubiSpacing.lg)
             .padding(.top, ClubiSpacing.sm)
         }
-    }
-    
-    // MARK: - Mock Data
-    
-    private func loadMockActivities() {
-        // Create some mock activities to show the UI
-        activities = [
-            FeedActivity(
-                userId: "user1",
-                userDisplayName: "Sarah Miller",
-                userUsername: "sarahgolf",
-                activityType: .courseReviewed,
-                courseId: "course1",
-                courseName: "Pebble Beach Golf Links",
-                courseLocation: "Pebble Beach, CA",
-                score: 8.7
-            ),
-            FeedActivity(
-                userId: "user2",
-                userDisplayName: "Mike Johnson",
-                userUsername: "mikej",
-                activityType: .courseReviewed,
-                courseId: "course2",
-                courseName: "Augusta National Golf Club",
-                courseLocation: "Augusta, GA",
-                score: 9.4
-            ),
-            FeedActivity(
-                userId: "user3",
-                userDisplayName: "Emma Davis",
-                userUsername: "emmagolf",
-                activityType: .courseReviewed,
-                courseId: "course3",
-                courseName: "Torrey Pines Golf Course",
-                courseLocation: "La Jolla, CA",
-                score: 9.2
-            ),
-            FeedActivity(
-                userId: "user4",
-                userDisplayName: "Alex Chen",
-                userUsername: "alexc",
-                activityType: .courseReviewed,
-                courseId: "course4",
-                courseName: "Whistling Straits",
-                courseLocation: "Kohler, WI",
-                score: 7.3
-            ),
-            FeedActivity(
-                userId: "user1",
-                userDisplayName: "Sarah Miller",
-                userUsername: "sarahgolf",
-                activityType: .courseReviewed,
-                courseId: "course5",
-                courseName: "Bethpage Black",
-                courseLocation: "Farmingdale, NY",
-                score: 6.8
-            )
-        ]
+        .refreshable {
+            Task {
+                await feedManager.refreshFeed()
+            }
+        }
     }
 }
 
