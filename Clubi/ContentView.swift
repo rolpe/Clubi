@@ -17,9 +17,9 @@ enum SortOption: String, CaseIterable {
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @State private var courses: [Course] = []
     @EnvironmentObject var authManager: AuthenticationManager
     @StateObject private var profileManager = MemberProfileManager()
+    @Query private var allCourses: [Course]
     @State private var searchText = ""
     @State private var showingAddCourse = false
     @State private var selectedCourse: Course?
@@ -41,6 +41,12 @@ struct ContentView: View {
     @State private var isSearchFieldDisabled = false
 
     private let googlePlacesService = GooglePlacesService(apiKey: ConfigManager.shared.googlePlacesAPIKey)
+    
+    // User-specific courses (automatically updates when data changes)
+    var courses: [Course] {
+        guard let userId = authManager.user?.uid else { return [] }
+        return allCourses.filter { $0.userId == userId }
+    }
     
     // Filtered and sorted courses based on search text and sort option
     var filteredCourses: [Course] {
@@ -391,7 +397,6 @@ struct ContentView: View {
                 AddCourseView(searchText: searchText) { newCourse in
                     // When course is added, dismiss the sheet and start review
                     showingAddCourse = false
-                    loadUserCourses() // Refresh the list
                     selectedCourse = newCourse
                     // Clear search since we'll show the review flow
                     searchTimer?.invalidate()
@@ -403,8 +408,6 @@ struct ContentView: View {
                 ReviewFlowView(course: course) {
                     // Completion handler to dismiss the entire review flow
                     selectedCourse = nil
-                    // Refresh course list to show updated reviews
-                    loadUserCourses()
                     // Clear search to show updated course list
                     searchTimer?.invalidate()
                     searchText = ""
@@ -521,10 +524,7 @@ struct ContentView: View {
                 Text("This will permanently delete all courses and reviews. This action cannot be undone.")
             }
             .onAppear {
-                loadUserCourses()
-            }
-            .onChange(of: authManager.user?.uid) { _, _ in
-                loadUserCourses()
+                // Courses automatically loaded via @Query
             }
 
         }
@@ -603,7 +603,6 @@ struct ContentView: View {
         
         // Save and immediately start review
         try? modelContext.save()
-        loadUserCourses() // Refresh the list
         selectedCourse = newCourse
     }
     
@@ -639,6 +638,7 @@ struct ContentView: View {
             // Create and insert the review
             let review = Review(courseId: course.id, answers: reviewAnswers)
             review.course = course
+            course.reviews.append(review)
             
             // Manually set strategic scores for playoff courses
             if name == "Oakmont Country Club" {
@@ -656,8 +656,7 @@ struct ContentView: View {
         // Save all changes
         try? modelContext.save()
         
-        // Refresh the courses list
-        loadUserCourses()
+        // Courses will auto-refresh via @Query
         
         print("🏌️ Added test courses with TRIPLE PLAYOFF setup!")
         print("📋 TO TRIGGER TRIPLE PLAYOFF:")
@@ -734,26 +733,6 @@ struct ContentView: View {
         }
     }
     
-    private func loadUserCourses() {
-        guard let userId = authManager.user?.uid else {
-            courses = []
-            return
-        }
-        
-        // Fetch only courses for the current user
-        let descriptor = FetchDescriptor<Course>(
-            predicate: #Predicate<Course> { course in
-                course.userId == userId
-            }
-        )
-        
-        do {
-            courses = try modelContext.fetch(descriptor)
-        } catch {
-            print("Error loading user courses: \(error)")
-            courses = []
-        }
-    }
 }
 
 // MARK: - Google Course Row View

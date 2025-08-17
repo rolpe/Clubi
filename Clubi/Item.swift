@@ -254,3 +254,136 @@ struct FollowingRelationship {
         self.dateFollowed = dateFollowed
     }
 }
+
+// MARK: - Feed Activity Models
+
+enum FeedActivityType: String, Codable, CaseIterable {
+    case courseReviewed = "course_reviewed"
+    
+    var displayText: String {
+        switch self {
+        case .courseReviewed:
+            return "reviewed"
+        }
+    }
+    
+    var iconName: String {
+        switch self {
+        case .courseReviewed:
+            return "star.fill"
+        }
+    }
+}
+
+struct FeedActivity: Codable, Identifiable {
+    let id: String
+    let userId: String
+    let userDisplayName: String
+    let userUsername: String
+    let activityType: FeedActivityType
+    let courseId: String
+    let courseName: String
+    let courseLocation: String
+    let score: Double? // Only present for courseReviewed activities
+    let timestamp: Date
+    
+    init(userId: String, userDisplayName: String, userUsername: String, activityType: FeedActivityType, courseId: String, courseName: String, courseLocation: String, score: Double? = nil) {
+        self.id = UUID().uuidString
+        self.userId = userId
+        self.userDisplayName = userDisplayName
+        self.userUsername = userUsername
+        self.activityType = activityType
+        self.courseId = courseId
+        self.courseName = courseName
+        self.courseLocation = courseLocation
+        self.score = score
+        self.timestamp = Date()
+    }
+    
+    // Firestore conversion helpers
+    func toDictionary() -> [String: Any] {
+        var dict: [String: Any] = [
+            "userId": userId,
+            "userDisplayName": userDisplayName,
+            "userUsername": userUsername,
+            "activityType": activityType.rawValue,
+            "courseId": courseId,
+            "courseName": courseName,
+            "courseLocation": courseLocation,
+            "timestamp": Timestamp(date: timestamp)
+        ]
+        
+        if let score = score {
+            dict["score"] = score
+        }
+        
+        return dict
+    }
+    
+    static func fromDictionary(id: String, data: [String: Any]) -> FeedActivity? {
+        guard let userId = data["userId"] as? String,
+              let userDisplayName = data["userDisplayName"] as? String,
+              let userUsername = data["userUsername"] as? String,
+              let activityTypeRaw = data["activityType"] as? String,
+              let activityType = FeedActivityType(rawValue: activityTypeRaw),
+              let courseId = data["courseId"] as? String,
+              let courseName = data["courseName"] as? String,
+              let courseLocation = data["courseLocation"] as? String,
+              let timestamp = (data["timestamp"] as? Timestamp)?.dateValue() else {
+            return nil
+        }
+        
+        let score = data["score"] as? Double
+        
+        var activity = FeedActivity(
+            userId: userId,
+            userDisplayName: userDisplayName,
+            userUsername: userUsername,
+            activityType: activityType,
+            courseId: courseId,
+            courseName: courseName,
+            courseLocation: courseLocation,
+            score: score
+        )
+        
+        // Override the generated values with the stored ones
+        activity = FeedActivity(
+            id: id,
+            userId: userId,
+            userDisplayName: userDisplayName,
+            userUsername: userUsername,
+            activityType: activityType,
+            courseId: courseId,
+            courseName: courseName,
+            courseLocation: courseLocation,
+            score: score,
+            timestamp: timestamp
+        )
+        
+        return activity
+    }
+    
+    private init(id: String, userId: String, userDisplayName: String, userUsername: String, activityType: FeedActivityType, courseId: String, courseName: String, courseLocation: String, score: Double?, timestamp: Date) {
+        self.id = id
+        self.userId = userId
+        self.userDisplayName = userDisplayName
+        self.userUsername = userUsername
+        self.activityType = activityType
+        self.courseId = courseId
+        self.courseName = courseName
+        self.courseLocation = courseLocation
+        self.score = score
+        self.timestamp = timestamp
+    }
+}
+
+// MARK: - FeedActivity Extensions
+extension FeedActivity: Hashable {
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+    
+    static func == (lhs: FeedActivity, rhs: FeedActivity) -> Bool {
+        return lhs.id == rhs.id
+    }
+}

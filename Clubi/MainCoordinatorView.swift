@@ -17,7 +17,7 @@ struct MainCoordinatorView: View {
             if authManager.isAuthenticated {
                 if let profile = profileManager.currentMemberProfile, profile.isProfileComplete {
                     // User has complete profile - show main app
-                    ContentView()
+                    MainTabView()
                         .environmentObject(authManager)
                 } else {
                     // User needs to complete profile setup

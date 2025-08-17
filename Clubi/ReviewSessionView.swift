@@ -18,6 +18,7 @@ struct ReviewSessionView: View {
     let onCompletion: () -> Void
     
     @StateObject private var reviewSession: ReviewSession
+    @StateObject private var profileManager = MemberProfileManager()
     @State private var showingDetailedReview = false
     @State private var tiedCourse: Course?
     @State private var showingCancelAlert = false
@@ -311,8 +312,25 @@ struct ReviewSessionView: View {
     }
     
     private func commitReview() {
+        // First commit to local database synchronously
         do {
             try reviewSession.commitToDatabase(modelContext: modelContext)
+            
+            // Then generate activity asynchronously if profile available
+            if let memberProfile = profileManager.currentMemberProfile {
+                Task {
+                    do {
+                        try await ActivityManager.shared.createActivityFromReviewSession(
+                            reviewSession,
+                            memberProfile: memberProfile
+                        )
+                    } catch {
+                        print("⚠️ Failed to create feed activity: \(error)")
+                        // Activity creation failure doesn't affect the review
+                    }
+                }
+            }
+            
             onCompletion()
         } catch {
             print("Failed to save review: \(error)")
@@ -322,8 +340,15 @@ struct ReviewSessionView: View {
     private func findTiedCourse() -> Course? {
         let currentScore = calculatedScore
         
+        // Get current user's ID to filter courses
+        let currentUserId = course.userId
+        
         // Look for courses with the same score (within 0.05 tolerance)
+        // Only check courses belonging to the current user
         for otherCourse in allCourses {
+            // Skip courses not belonging to current user
+            if otherCourse.userId != currentUserId { continue }
+            
             // Skip the current course
             if otherCourse.id == course.id { continue }
             

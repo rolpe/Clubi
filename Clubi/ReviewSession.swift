@@ -27,7 +27,11 @@ class ReviewSession: ObservableObject {
         
         for result in playoffResults {
             if result.winner == course.id {
+                // New course wins: increase score
                 finalScore += result.scoreAdjustment
+            } else {
+                // Challenger wins: decrease new course score
+                finalScore -= result.scoreAdjustment
             }
         }
         
@@ -42,6 +46,7 @@ class ReviewSession: ObservableObject {
         let review = Review(courseId: course.id, answers: answers)
         review.calculatedScore = getFinalScore()
         review.course = course
+        course.reviews.append(review)
         
         modelContext.insert(review)
         
@@ -54,6 +59,7 @@ class ReviewSession: ObservableObject {
         try modelContext.save()
         isCompleted = true
     }
+    
     
     private func adjustOpponentScore(_ course: Course, by adjustment: Double) {
         if let latestReview = course.reviews.sorted(by: { $0.dateReviewed > $1.dateReviewed }).first {

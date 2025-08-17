@@ -391,7 +391,13 @@ struct TransactionalPlayoffView: View {
     }
     
     private func findTiedCourse(withScore targetScore: Double, excluding excludedIds: [UUID]) -> Course? {
+        // Get current user's ID to filter courses
+        let currentUserId = reviewSession.course.userId
+        
         for otherCourse in allCourses {
+            // Skip courses not belonging to current user
+            if otherCourse.userId != currentUserId { continue }
+            
             if excludedIds.contains(otherCourse.id) { continue }
             
             let alreadyInPlayoffs = reviewSession.playoffResults.contains { result in
