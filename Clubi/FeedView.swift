@@ -9,6 +9,7 @@ import SwiftUI
 
 struct FeedView: View {
     @StateObject private var feedManager = FeedManager.shared
+    @State private var hasAppeared = false
     
     var body: some View {
         NavigationView {
@@ -30,6 +31,8 @@ struct FeedView: View {
                 // Content
                 if feedManager.isLoading {
                     loadingView
+                } else if feedManager.hasError {
+                    errorView
                 } else if feedManager.activities.isEmpty {
                     emptyStateView
                 } else {
@@ -39,8 +42,12 @@ struct FeedView: View {
             .background(Color.morningMist)
             .navigationBarHidden(true)
             .onAppear {
-                Task {
-                    await feedManager.loadFeedActivities()
+                if !hasAppeared {
+                    // First time appearing - load normally
+                    Task {
+                        await feedManager.loadFeedActivities()
+                    }
+                    hasAppeared = true
                 }
                 feedManager.startListeningForFeedUpdates()
             }
@@ -65,6 +72,40 @@ struct FeedView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
+    // MARK: - Error View
+    
+    private var errorView: some View {
+        VStack(spacing: ClubiSpacing.xl) {
+            Spacer()
+            
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 50))
+                .foregroundColor(.errorRed)
+            
+            VStack(spacing: ClubiSpacing.sm) {
+                Text("Unable to Load Feed")
+                    .font(ClubiTypography.headline(20, weight: .semibold))
+                    .foregroundColor(.charcoal)
+                
+                Text(feedManager.errorMessage.isEmpty ? "Something went wrong. Please try again." : feedManager.errorMessage)
+                    .font(ClubiTypography.body())
+                    .foregroundColor(.grayFairway)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(2)
+            }
+            
+            Button("Try Again") {
+                Task {
+                    await feedManager.retryLoading()
+                }
+            }
+            .clubiPrimaryButton()
+            
+            Spacer()
+        }
+        .padding(.horizontal, ClubiSpacing.xl)
+    }
+    
     // MARK: - Empty State View
     
     private var emptyStateView: some View {
@@ -76,11 +117,11 @@ struct FeedView: View {
                 .foregroundColor(.lightGray)
             
             VStack(spacing: ClubiSpacing.sm) {
-                Text("No Activity Yet")
+                Text("Your Feed is Empty")
                     .font(ClubiTypography.headline(20, weight: .semibold))
                     .foregroundColor(.charcoal)
                 
-                Text("Follow other golf enthusiasts to see their course reviews and activity in your feed")
+                Text("Start following other golfers to see their latest course reviews and discoveries in your feed. Connect with the community and never miss a great course recommendation!")
                     .font(ClubiTypography.body())
                     .foregroundColor(.grayFairway)
                     .multilineTextAlignment(.center)
@@ -103,7 +144,33 @@ struct FeedView: View {
         ScrollView {
             LazyVStack(spacing: ClubiSpacing.md) {
                 ForEach(feedManager.activities, id: \.id) { activity in
-                    FeedActivityRow(activity: activity)
+                    FeedActivityRow(activity: activity) {
+                        // Refresh feed when profile sheet is dismissed
+                        Task {
+                            await feedManager.refreshFeed()
+                        }
+                    }
+                    .onAppear {
+                        // Load more when approaching end of list
+                        if activity.id == feedManager.activities.last?.id {
+                            Task {
+                                await feedManager.loadMoreActivities()
+                            }
+                        }
+                    }
+                }
+                
+                // Loading more indicator
+                if feedManager.isLoadingMore {
+                    HStack {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .augustaPine))
+                            .scaleEffect(0.8)
+                        Text("Loading more...")
+                            .font(ClubiTypography.caption())
+                            .foregroundColor(.grayFairway)
+                    }
+                    .padding(.vertical, ClubiSpacing.lg)
                 }
             }
             .padding(.horizontal, ClubiSpacing.lg)

@@ -426,12 +426,16 @@ struct MemberDetailView: View {
                     await MainActor.run {
                         isFollowing = false
                         followerCount = max(0, followerCount - 1)
+                        // Invalidate feed cache since following list changed
+                        FeedManager.shared.invalidateFollowingCache()
                     }
                 } else {
                     try await profileManager.followMember(userId: member.id)
                     await MainActor.run {
                         isFollowing = true
                         followerCount += 1
+                        // Invalidate feed cache since following list changed
+                        FeedManager.shared.invalidateFollowingCache()
                     }
                 }
             } catch {
