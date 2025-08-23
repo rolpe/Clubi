@@ -21,6 +21,7 @@ struct AuthenticationView: View {
                 // Header Section
                 VStack(spacing: 24) {
                     Spacer()
+                        .frame(maxHeight: 60)
                     
                     // App Logo & Title
                     VStack(spacing: ClubiSpacing.lg) {
@@ -37,8 +38,7 @@ struct AuthenticationView: View {
                         .font(ClubiTypography.headline(18))
                         .foregroundColor(.grayFairway)
                         .multilineTextAlignment(.center)
-                    
-                    Spacer()
+                        .padding(.bottom, 32)
                 }
                 
                 // Form Section
@@ -62,6 +62,7 @@ struct AuthenticationView: View {
                                 .shadow(color: isSignUp ? .black.opacity(0.15) : Color.clear, radius: 6, x: 0, y: 2)
                                 .animation(.spring(response: 0.5, dampingFraction: 0.8), value: isSignUp)
                         }
+                        .frame(height: 46)
                         .padding(2)
                         
                         // Buttons
